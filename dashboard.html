@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My CRM Dashboard</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f1f5f9;
+            display: flex;
+            height: 100vh;
+        }
+        /* Sidebar Design */
+        .sidebar {
+            width: 250px;
+            background-color: #0f172a;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            padding-top: 20px;
+        }
+        .sidebar h2 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #38bdf8;
+        }
+        .sidebar a {
+            padding: 15px 25px;
+            text-decoration: none;
+            color: #cbd5e1;
+            font-size: 16px;
+            transition: 0.3s;
+        }
+        .sidebar a:hover {
+            background-color: #1e293b;
+            color: white;
+        }
+        .sidebar a.active {
+            background-color: #38bdf8;
+            color: #0f172a;
+            font-weight: bold;
+        }
+        
+        /* Main Content Area */
+        .main-content {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+        .header h1 {
+            margin: 0;
+            color: #334155;
+        }
+        .btn-add {
+            background-color: #10b981;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        /* Leads Table */
+        .table-container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            text-align: left;
+            padding: 12px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        th {
+            background-color: #f8fafc;
+            color: #475569;
+        }
+        td {
+            color: #334155;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Left Sidebar -->
+    <div class="sidebar">
+        <h2>My SaaS CRM</h2>
+        <a href="#" class="active">Leads Manager</a>
+        <a href="#">Marketing Campaigns</a>
+        <a href="#">Analytics</a>
+        <a href="index.html" style="margin-top: auto; border-top: 1px solid #334155;">Logout</a>
+    </div>
+
+    <!-- Right Main Content -->
+    <div class="main-content">
+        <div class="header">
+            <h1>Leads Dashboard</h1>
+            <button class="btn-add">+ Add New Lead</button>
+        </div>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Phone</th>
+                        <th>Source</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Dummy Data for now -->
+                    <tr>
+                        <td>Rahul Sharma</td>
+                        <td>rahul@example.com</td>
+                        <td>+91 9876543210</td>
+                        <td>Google Ads</td>
+                        <td><span style="color: #10b981; font-weight: bold;">New</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</body>
+</html>
