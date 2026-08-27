@@ -5,26 +5,35 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My CRM Dashboard</title>
     <style>
-        body {
+        * {
             margin: 0;
+            padding: 0;
+            box-sizing: border-box;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        body {
             background-color: #f1f5f9;
             display: flex;
             height: 100vh;
+            overflow: hidden;
         }
         /* Sidebar Design */
         .sidebar {
-            width: 250px;
+            width: 260px;
             background-color: #0f172a;
             color: white;
             display: flex;
             flex-direction: column;
-            padding-top: 20px;
+            transition: all 0.3s ease;
+            overflow: hidden;
         }
         .sidebar h2 {
+            padding: 20px;
+            font-size: 1.25rem;
             text-align: center;
-            margin-bottom: 30px;
+            margin-bottom: 10px;
             color: #38bdf8;
+            border-bottom: 1px solid #1e293b;
         }
         .sidebar a {
             padding: 15px 25px;
@@ -46,8 +55,28 @@
         /* Main Content Area */
         .main-content {
             flex: 1;
-            padding: 30px;
+            display: flex;
+            flex-direction: column;
             overflow-y: auto;
+        }
+        .topbar {
+            height: 60px;
+            background-color: #ffffff;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            align-items: center;
+            padding: 0 25px;
+            justify-content: space-between;
+        }
+        .menu-toggle-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #0f172a;
+        }
+        .content-body {
+            padding: 30px;
         }
         .header {
             display: flex;
@@ -58,6 +87,7 @@
         .header h1 {
             margin: 0;
             color: #334155;
+            font-size: 1.5rem;
         }
         .btn-add {
             background-color: #10b981;
@@ -98,45 +128,67 @@
 <body>
 
     <!-- Left Sidebar -->
-    <div class="sidebar">
+    <div id="sidebar" class="sidebar">
         <h2>My SaaS CRM</h2>
         <a href="#" class="active">Leads Manager</a>
         <a href="#">Marketing Campaigns</a>
-        
         <a href="index.html" style="margin-top: auto; border-top: 1px solid #334155;">Logout</a>
     </div>
 
     <!-- Right Main Content -->
     <div class="main-content">
-        <div class="header">
-            <h1>Leads Dashboard</h1>
-            <button class="btn-add">+ Add New Lead</button>
+        <!-- Top Navigation Bar with Toggle Button -->
+        <div class="topbar">
+            <button id="menuToggle" class="menu-toggle-btn">☰</button>
+            <span style="font-weight: 600; color: #1e293b;">Dashboard Overview</span>
         </div>
 
-        <div class="table-container">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Name</th>
-                        <th>Email</th>
-                        <th>Phone</th>
-                        <th>Source</th>
-                        <th>Status</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <!-- Dummy Data for now -->
-                    <tr>
-                        <td>Rahul Sharma</td>
-                        <td>rahul@example.com</td>
-                        <td>+91 9876543210</td>
-                        <td>Google Ads</td>
-                        <td><span style="color: #10b981; font-weight: bold;">New</span></td>
-                    </tr>
-                </tbody>
-            </table>
+        <div class="content-body">
+            <div class="header">
+                <h1>Leads Dashboard</h1>
+                <button class="btn-add">+ Add New Lead</button>
+            </div>
+
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Phone</th>
+                            <th>Source</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Rahul Sharma</td>
+                            <td>rahul@example.com</td>
+                            <td>+91 9876543210</td>
+                            <td>Google Ads</td>
+                            <td><span style="color: #10b981; font-weight: bold;">New</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
+
+    <!-- Toggle Script -->
+    <script>
+        const toggleBtn = document.getElementById('menuToggle');
+        const sidebar = document.getElementById('sidebar');
+
+        toggleBtn.addEventListener('click', () => {
+            if (sidebar.style.width === '0px') {
+                sidebar.style.width = '260px';
+                sidebar.style.padding = '20px 0';
+            } else {
+                sidebar.style.width = '0px';
+                sidebar.style.padding = '0';
+            }
+        });
+    </script>
 
 </body>
 </html>
