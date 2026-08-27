@@ -202,8 +202,6 @@
             cursor: pointer;
             font-size: 14px;
             margin-right: 5px;
-            text-decoration: none;
-            display: inline-block;
         }
 
         .btn-action-delete {
@@ -214,6 +212,21 @@
             border-radius: 4px;
             cursor: pointer;
             font-size: 14px;
+        }
+
+        .btn-convert {
+            background-color: #059669;
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .btn-convert:hover {
+            background-color: #047857;
         }
 
         .modal {
@@ -302,7 +315,6 @@
             font-weight: 600;
         }
 
-        /* Detail Page Grid Layout */
         #detailPageView {
             display: none;
         }
@@ -393,7 +405,10 @@
         <div class="content-body" id="detailPageView">
             <div class="header">
                 <h1 id="detailHeaderTitle">Record Details</h1>
-                <button class="btn-cancel" onclick="goBackToTable()">← Back to List</button>
+                <div style="display: flex; gap: 10px;">
+                    <div id="convertActionContainer"></div>
+                    <button class="btn-cancel" onclick="goBackToTable()">← Back to List</button>
+                </div>
             </div>
             <div class="table-container" style="padding: 30px; background: white;">
                 <div class="detail-grid" id="detailPageContent">
@@ -613,6 +628,14 @@
 
             document.getElementById('detailHeaderTitle').innerText = `${item.name} - Profile Details`;
 
+            // Show Convert to Customer button only if currently in Leads module
+            const convertContainer = document.getElementById('convertActionContainer');
+            if (currentModule === 'Leads') {
+                convertContainer.innerHTML = `<button class="btn-convert" onclick="convertToCustomer(${item.id})">Convert to Customer</button>`;
+            } else {
+                convertContainer.innerHTML = '';
+            }
+
             let html = `
                 <div class="detail-card">
                     <h3>Personal Information</h3>
@@ -651,6 +674,26 @@
             document.getElementById('detailPageContent').innerHTML = html;
             document.getElementById('mainTableView').style.display = 'none';
             document.getElementById('detailPageView').style.display = 'block';
+        }
+
+        function convertToCustomer(id) {
+            if (confirm("Are you sure you want to convert this lead into a customer?")) {
+                let leads = JSON.parse(localStorage.getItem('crm_leads')) || [];
+                let customers = JSON.parse(localStorage.getItem('crm_customers')) || [];
+
+                const leadIndex = leads.findIndex(l => l.id === id);
+                if (leadIndex !== -1) {
+                    const convertedLead = leads.splice(leadIndex, 1)[0]; // Remove from leads
+                    customers.push(convertedLead); // Add to customers
+
+                    localStorage.setItem('crm_leads', JSON.stringify(leads));
+                    localStorage.setItem('crm_customers', JSON.stringify(customers));
+
+                    alert("Lead successfully converted to Customer!");
+                    goBackToTable();
+                    renderTable();
+                }
+            }
         }
 
         function goBackToTable() {
