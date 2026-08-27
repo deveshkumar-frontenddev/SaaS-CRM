@@ -205,6 +205,28 @@
             border: 1px solid #fde68a;
         }
 
+        /* Action Buttons inside Table */
+        .btn-action-view {
+            background-color: #0284c7;
+            color: white;
+            padding: 5px 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            margin-right: 5px;
+        }
+
+        .btn-action-delete {
+            background-color: #dc2626;
+            color: white;
+            padding: 5px 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
         /* Modal Styles */
         .modal {
             display: none;
@@ -291,6 +313,19 @@
             cursor: pointer;
             font-weight: 600;
         }
+
+        /* Details Modal Content Styling */
+        .detail-row {
+            margin-bottom: 12px;
+            font-size: 14px;
+        }
+
+        .detail-row span {
+            font-weight: 600;
+            color: var(--text-muted);
+            display: inline-block;
+            width: 130px;
+        }
     </style>
 </head>
 <body>
@@ -323,8 +358,8 @@
                             <th>Name</th>
                             <th>Mobile</th>
                             <th>Email</th>
-                            <th>Source Details</th>
-                            <th>Status</th>
+                            <th>Source</th>
+                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody id="leadsTableBody">
@@ -364,7 +399,7 @@
                     </select>
                 </div>
 
-                <!-- Reference Extra Fields (Hidden by default) -->
+                <!-- Reference Extra Fields -->
                 <div class="reference-box" id="referenceBox">
                     <label style="font-weight: bold; margin-bottom: 10px; color: var(--navy-dark); display: block;">Reference Details:</label>
                     <div class="form-group">
@@ -386,6 +421,19 @@
                     <button type="submit" class="btn-submit">Save Lead</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- View Details Modal -->
+    <div class="modal" id="detailsModal">
+        <div class="modal-content">
+            <h3>Lead Details</h3>
+            <div id="detailsContent">
+                <!-- Dynamic details will be loaded here -->
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn-cancel" id="closeDetailsBtn">Close</button>
+            </div>
         </div>
     </div>
 
@@ -411,7 +459,10 @@
         const leadSource = document.getElementById('leadSource');
         const referenceBox = document.getElementById('referenceBox');
 
-        // Show/Hide Reference fields based on dropdown selection
+        const detailsModal = document.getElementById('detailsModal');
+        const closeDetailsBtn = document.getElementById('closeDetailsBtn');
+        const detailsContent = document.getElementById('detailsContent');
+
         leadSource.addEventListener('change', () => {
             if (leadSource.value === 'Reference') {
                 referenceBox.style.display = 'block';
@@ -428,7 +479,13 @@
             modal.style.display = 'none';
         });
 
-        // Handle Form Submit
+        closeDetailsBtn.addEventListener('click', () => {
+            detailsModal.style.display = 'none';
+        });
+
+        // Store leads array to manage data easily
+        let leadsData = [];
+
         leadForm.addEventListener('submit', (e) => {
             e.preventDefault();
 
@@ -437,33 +494,75 @@
             const email = document.getElementById('leadEmail').value || 'N/A';
             const source = leadSource.value;
 
-            let sourceDetails = source;
+            let refData = { name: 'N/A', phone: 'N/A', email: 'N/A' };
             if (source === 'Reference') {
-                const rName = document.getElementById('refName').value || 'N/A';
-                const rPhone = document.getElementById('refPhone').value || 'N/A';
-                const rEmail = document.getElementById('refEmail').value || 'N/A';
-                sourceDetails = `Ref: ${rName} (${rPhone})`;
+                refData.name = document.getElementById('refName').value || 'N/A';
+                refData.phone = document.getElementById('refPhone').value || 'N/A';
+                refData.email = document.getElementById('refEmail').value || 'N/A';
             }
 
-            if (leadsTableBody.querySelector('.no-data')) {
-                leadsTableBody.innerHTML = '';
-            }
-
-            const newRow = document.createElement('tr');
-            newRow.innerHTML = `
-                <td style="font-weight: 600;">${name}</td>
-                <td style="color: var(--text-muted);">${phone}</td>
-                <td style="color: var(--text-muted);">${email}</td>
-                <td>${sourceDetails}</td>
-                <td><span class="badge-new">Active</span></td>
-            `;
-
-            leadsTableBody.appendChild(newRow);
+            const newLead = { id: Date.now(), name, phone, email, source, refData };
+            leadsData.push(newLead);
+            renderTable();
 
             leadForm.reset();
             referenceBox.style.display = 'none';
             modal.style.display = 'none';
         });
+
+        function renderTable() {
+            leadsTableBody.innerHTML = '';
+
+            if (leadsData.length === 0) {
+                leadsTableBody.innerHTML = `<tr><td colspan="5" class="no-data">No leads found. Click "+ Add New Lead" to create one.</td></tr>`;
+                return;
+            }
+
+            leadsData.forEach((lead) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td style="font-weight: 600;">${lead.name}</td>
+                    <td style="color: var(--text-muted);">${lead.phone}</td>
+                    <td style="color: var(--text-muted);">${lead.email}</td>
+                    <td>${lead.source}</td>
+                    <td>
+                        <button class="btn-action-view" onclick="viewDetails(${lead.id})">View Details</button>
+                        <button class="btn-action-delete" onclick="deleteLead(${lead.id})">Delete</button>
+                    </td>
+                `;
+                leadsTableBody.appendChild(row);
+            });
+        }
+
+        function viewDetails(id) {
+            const lead = leadsData.find(l => l.id === id);
+            if (!lead) return;
+
+            let html = `
+                <div class="detail-row"><span>Full Name:</span> ${lead.name}</div>
+                <div class="detail-row"><span>Mobile:</span> ${lead.phone}</div>
+                <div class="detail-row"><span>Email:</span> ${lead.email}</div>
+                <div class="detail-row"><span>Source:</span> ${lead.source}</div>
+            `;
+
+            if (lead.source === 'Reference') {
+                html += `
+                    <hr style="margin: 15px 0; border: 0; border-top: 1px solid #e2e8f0;">
+                    <div class="detail-row" style="font-weight: bold; color: var(--navy-dark);">Referrer Information:</div>
+                    <div class="detail-row"><span>Ref Name:</span> ${lead.refData.name}</div>
+                    <div class="detail-row"><span>Ref Mobile:</span> ${lead.refData.phone}</div>
+                    <div class="detail-row"><span>Ref Email:</span> ${lead.refData.email}</div>
+                `;
+            }
+
+            detailsContent.innerHTML = html;
+            detailsModal.style.display = 'flex';
+        }
+
+        function deleteLead(id) {
+            leadsData = leadsData.filter(l => l.id !== id);
+            renderTable();
+        }
     </script>
 
 </body>
