@@ -4,6 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SaaS CRM - Dashboard</title>
+    
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
     <style>
         :root {
             --navy-dark: #0f172a;
@@ -394,7 +399,7 @@
                     </thead>
                     <tbody id="leadsTableBody">
                         <tr>
-                            <td colspan="5" class="no-data">No data found. Click button above to create one.</td>
+                            <td colspan="5" class="no-data">Loading data from cloud...</td>
                         </tr>
                     </tbody>
                 </table>
@@ -491,6 +496,20 @@
     </div>
 
     <script>
+        // Initialize Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyAGst4FREVaPqf9xaQb26_z0rXFBwQkR4I",
+            authDomain: "crms-78a4b.firebaseapp.com",
+            projectId: "crms-78a4b",
+            storageBucket: "crms-78a4b.firebasestorage.app",
+            messagingSenderId: "363195838529",
+            appId: "1:363195838529:web:3b23c3a98767eac24456c0",
+            measurementId: "G-DRCQWTF81J"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
         const toggleBtn = document.getElementById('menuToggle');
         const sidebar = document.getElementById('sidebar');
 
@@ -504,6 +523,7 @@
         });
 
         let currentModule = 'Leads';
+        let currentItemsCache = [];
 
         function switchModule(moduleName) {
             currentModule = moduleName;
@@ -524,7 +544,7 @@
                 document.getElementById('modalTitle').innerText = 'Add New Customer';
             }
             goBackToTable();
-            renderTable();
+            fetchData();
         }
 
         const modal = document.getElementById('leadModal');
@@ -551,14 +571,28 @@
             modal.style.display = 'none';
         });
 
-        function getDataKey() {
-            return currentModule === 'Leads' ? 'crm_leads' : 'crm_customers';
+        function getCollectionName() {
+            return currentModule === 'Leads' ? 'leads' : 'customers';
+        }
+
+        // Fetch data from Firebase Firestore
+        function fetchData() {
+            leadsTableBody.innerHTML = `<tr><td colspan="5" class="no-data">Loading data from cloud...</td></tr>`;
+            
+            db.collection(getCollectionName()).get().then((querySnapshot) => {
+                currentItemsCache = [];
+                querySnapshot.forEach((doc) => {
+                    currentItemsCache.push({ docId: doc.id, ...doc.data() });
+                });
+                renderTable();
+            }).catch((error) => {
+                console.error("Error getting documents: ", error);
+                leadsTableBody.innerHTML = `<tr><td colspan="5" class="no-data" style="color: red;">Error loading data from cloud. Check connection/rules.</td></tr>`;
+            });
         }
 
         leadForm.addEventListener('submit', (e) => {
             e.preventDefault();
-
-            let data = JSON.parse(localStorage.getItem(getDataKey())) || [];
 
             const newItem = {
                 id: Date.now(),
@@ -575,28 +609,32 @@
                     name: document.getElementById('refName').value || 'N/A',
                     phone: document.getElementById('refPhone').value || 'N/A',
                     email: document.getElementById('refEmail').value || 'N/A'
-                }
+                },
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
             };
 
-            data.push(newItem);
-            localStorage.setItem(getDataKey(), JSON.stringify(data));
-            renderTable();
-
-            leadForm.reset();
-            referenceBox.style.display = 'none';
-            modal.style.display = 'none';
+            // Save to Firebase Firestore
+            db.collection(getCollectionName()).add(newItem)
+                .then(() => {
+                    fetchData();
+                    leadForm.reset();
+                    referenceBox.style.display = 'none';
+                    modal.style.display = 'none';
+                })
+                .catch((error) => {
+                    alert("Error adding record: " + error.message);
+                });
         });
 
         function renderTable() {
-            let data = JSON.parse(localStorage.getItem(getDataKey())) || [];
             leadsTableBody.innerHTML = '';
 
-            if (data.length === 0) {
+            if (currentItemsCache.length === 0) {
                 leadsTableBody.innerHTML = `<tr><td colspan="5" class="no-data">No records found. Click button above to create one.</td></tr>`;
                 return;
             }
 
-            data.forEach((item) => {
+            currentItemsCache.forEach((item) => {
                 const row = document.createElement('tr');
                 row.innerHTML = `
                     <td style="font-weight: 600;">${item.name}</td>
@@ -604,34 +642,33 @@
                     <td style="color: var(--text-muted);">${item.company}</td>
                     <td>${item.source}</td>
                     <td>
-                        <button class="btn-action-view" onclick="viewDetailPage(${item.id})" title="View Details">👁</button>
-                        <button class="btn-action-delete" onclick="confirmAndDelete(${item.id})">Delete</button>
+                        <button class="btn-action-view" onclick="viewDetailPage('${item.docId}')" title="View Details">👁</button>
+                        <button class="btn-action-delete" onclick="confirmAndDelete('${item.docId}')">Delete</button>
                     </td>
                 `;
                 leadsTableBody.appendChild(row);
             });
         }
 
-        function confirmAndDelete(id) {
-            if (confirm("Are you sure you want to delete this record?")) {
-                let data = JSON.parse(localStorage.getItem(getDataKey())) || [];
-                data = data.filter(item => item.id !== id);
-                localStorage.setItem(getDataKey(), JSON.stringify(data));
-                renderTable();
+        function confirmAndDelete(docId) {
+            if (confirm("Are you sure you want to delete this record from cloud?")) {
+                db.collection(getCollectionName()).doc(docId).delete().then(() => {
+                    fetchData();
+                }).catch((error) => {
+                    alert("Error removing document: " + error.message);
+                });
             }
         }
 
-        function viewDetailPage(id) {
-            let data = JSON.parse(localStorage.getItem(getDataKey())) || [];
-            const item = data.find(i => i.id === id);
+        function viewDetailPage(docId) {
+            const item = currentItemsCache.find(i => i.docId === docId);
             if (!item) return;
 
             document.getElementById('detailHeaderTitle').innerText = `${item.name} - Profile Details`;
 
-            // Show Convert to Customer button only if currently in Leads module
             const convertContainer = document.getElementById('convertActionContainer');
             if (currentModule === 'Leads') {
-                convertContainer.innerHTML = `<button class="btn-convert" onclick="convertToCustomer(${item.id})">Convert to Customer</button>`;
+                convertContainer.innerHTML = `<button class="btn-convert" onclick="convertToCustomer('${item.docId}')">Convert to Customer</button>`;
             } else {
                 convertContainer.innerHTML = '';
             }
@@ -676,23 +713,25 @@
             document.getElementById('detailPageView').style.display = 'block';
         }
 
-        function convertToCustomer(id) {
+        function convertToCustomer(docId) {
             if (confirm("Are you sure you want to convert this lead into a customer?")) {
-                let leads = JSON.parse(localStorage.getItem('crm_leads')) || [];
-                let customers = JSON.parse(localStorage.getItem('crm_customers')) || [];
+                const item = currentItemsCache.find(i => i.docId === docId);
+                if (!item) return;
 
-                const leadIndex = leads.findIndex(l => l.id === id);
-                if (leadIndex !== -1) {
-                    const convertedLead = leads.splice(leadIndex, 1)[0]; // Remove from leads
-                    customers.push(convertedLead); // Add to customers
+                // Prepare customer object without docId
+                const customerData = { ...item };
+                delete customerData.docId;
 
-                    localStorage.setItem('crm_leads', JSON.stringify(leads));
-                    localStorage.setItem('crm_customers', JSON.stringify(customers));
-
-                    alert("Lead successfully converted to Customer!");
+                // Add to 'customers' collection and delete from 'leads' collection
+                db.collection('customers').add(customerData).then(() => {
+                    return db.collection('leads').doc(docId).delete();
+                }).then(() => {
+                    alert("Lead successfully converted to Customer on cloud!");
                     goBackToTable();
-                    renderTable();
-                }
+                    fetchData();
+                }).catch((error) => {
+                    alert("Error converting lead: " + error.message);
+                });
             }
         }
 
@@ -701,7 +740,8 @@
             document.getElementById('mainTableView').style.display = 'block';
         }
 
-        renderTable();
+        // Initial load from Firebase
+        fetchData();
     </script>
 </body>
 </html>
