@@ -234,7 +234,7 @@
             background-color: white;
             padding: 30px;
             border-radius: 12px;
-            width: 450px;
+            width: 500px;
             box-shadow: 0 10px 25px rgba(0,0,0,0.1);
             max-height: 90vh;
             overflow-y: auto;
@@ -257,7 +257,7 @@
             color: var(--text-muted);
         }
 
-        .form-group input, .form-group select {
+        .form-group input, .form-group select, .form-group textarea {
             width: 100%;
             padding: 10px;
             border: 1px solid #d1d5db;
@@ -302,9 +302,48 @@
             font-weight: 600;
         }
 
-        /* View Page Styling (Hidden by default, toggles view) */
+        /* Detail Page Grid Layout */
         #detailPageView {
             display: none;
+        }
+
+        .detail-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .detail-card {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            padding: 20px;
+            border-radius: 8px;
+        }
+
+        .detail-card h3 {
+            font-size: 16px;
+            color: var(--navy-dark);
+            margin-bottom: 15px;
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 8px;
+        }
+
+        .field-row {
+            margin-bottom: 10px;
+            font-size: 14px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .field-row span.label {
+            font-weight: 600;
+            color: var(--text-muted);
+        }
+
+        .field-row span.value {
+            color: var(--text-dark);
+            font-weight: 500;
+            text-align: right;
         }
     </style>
 </head>
@@ -336,14 +375,14 @@
                         <tr>
                             <th>Name</th>
                             <th>Mobile</th>
-                            <th>Email</th>
+                            <th>Company</th>
                             <th>Source</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody id="leadsTableBody">
                         <tr>
-                            <td colspan="5" class="no-data">No data found. Click "+ Add New Lead" to create one.</td>
+                            <td colspan="5" class="no-data">No data found. Click button above to create one.</td>
                         </tr>
                     </tbody>
                 </table>
@@ -353,16 +392,18 @@
         <!-- DETAILED FULL PAGE VIEW -->
         <div class="content-body" id="detailPageView">
             <div class="header">
-                <h1>Record Details</h1>
+                <h1 id="detailHeaderTitle">Record Details</h1>
                 <button class="btn-cancel" onclick="goBackToTable()">← Back to List</button>
             </div>
-            <div class="table-container" style="padding: 30px; background: white;" id="detailPageContent">
-                <!-- Loaded Dynamically -->
+            <div class="table-container" style="padding: 30px; background: white;">
+                <div class="detail-grid" id="detailPageContent">
+                    <!-- Dynamic Structured Fields Will Load Here -->
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- Add Lead Modal -->
+    <!-- Add/Edit Modal -->
     <div class="modal" id="leadModal">
         <div class="modal-content">
             <h3 id="modalTitle">Add New Lead</h3>
@@ -377,7 +418,23 @@
                 </div>
                 <div class="form-group">
                     <label>Email Address</label>
-                    <input type="email" id="leadEmail" placeholder="e.g. rahul@example.com (Optional)">
+                    <input type="email" id="leadEmail" placeholder="e.g. rahul@example.com">
+                </div>
+                <div class="form-group">
+                    <label>Company Name</label>
+                    <input type="text" id="leadCompany" placeholder="e.g. Tech Corp">
+                </div>
+                <div class="form-group">
+                    <label>Designation</label>
+                    <input type="text" id="leadDesignation" placeholder="e.g. Manager">
+                </div>
+                <div class="form-group">
+                    <label>Expected Budget</label>
+                    <input type="text" id="leadBudget" placeholder="e.g. $5000">
+                </div>
+                <div class="form-group">
+                    <label>Location</label>
+                    <input type="text" id="leadLocation" placeholder="e.g. Delhi, India">
                 </div>
                 <div class="form-group">
                     <label>Source</label>
@@ -403,6 +460,11 @@
                         <label>Reference Email</label>
                         <input type="email" id="refEmail" placeholder="Referrer Email">
                     </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Notes / Comments</label>
+                    <textarea id="leadNotes" rows="2" placeholder="Any additional notes..."></textarea>
                 </div>
 
                 <div class="modal-actions">
@@ -474,7 +536,6 @@
             modal.style.display = 'none';
         });
 
-        // LocalStorage keys differ per module
         function getDataKey() {
             return currentModule === 'Leads' ? 'crm_leads' : 'crm_customers';
         }
@@ -484,21 +545,25 @@
 
             let data = JSON.parse(localStorage.getItem(getDataKey())) || [];
 
-            const name = document.getElementById('leadName').value;
-            const phone = document.getElementById('leadPhone').value;
-            const email = document.getElementById('leadEmail').value || 'N/A';
-            const source = leadSource.value;
+            const newItem = {
+                id: Date.now(),
+                name: document.getElementById('leadName').value,
+                phone: document.getElementById('leadPhone').value,
+                email: document.getElementById('leadEmail').value || 'N/A',
+                company: document.getElementById('leadCompany').value || 'N/A',
+                designation: document.getElementById('leadDesignation').value || 'N/A',
+                budget: document.getElementById('leadBudget').value || 'N/A',
+                location: document.getElementById('leadLocation').value || 'N/A',
+                source: leadSource.value,
+                notes: document.getElementById('leadNotes').value || 'N/A',
+                refData: {
+                    name: document.getElementById('refName').value || 'N/A',
+                    phone: document.getElementById('refPhone').value || 'N/A',
+                    email: document.getElementById('refEmail').value || 'N/A'
+                }
+            };
 
-            let refData = { name: 'N/A', phone: 'N/A', email: 'N/A' };
-            if (source === 'Reference') {
-                refData.name = document.getElementById('refName').value || 'N/A';
-                refData.phone = document.getElementById('refPhone').value || 'N/A';
-                refData.email = document.getElementById('refEmail').value || 'N/A';
-            }
-
-            const newItem = { id: Date.now(), name, phone, email, source, refData };
             data.push(newItem);
-            
             localStorage.setItem(getDataKey(), JSON.stringify(data));
             renderTable();
 
@@ -521,7 +586,7 @@
                 row.innerHTML = `
                     <td style="font-weight: 600;">${item.name}</td>
                     <td style="color: var(--text-muted);">${item.phone}</td>
-                    <td style="color: var(--text-muted);">${item.email}</td>
+                    <td style="color: var(--text-muted);">${item.company}</td>
                     <td>${item.source}</td>
                     <td>
                         <button class="btn-action-view" onclick="viewDetailPage(${item.id})" title="View Details">👁</button>
@@ -546,23 +611,42 @@
             const item = data.find(i => i.id === id);
             if (!item) return;
 
+            document.getElementById('detailHeaderTitle').innerText = `${item.name} - Profile Details`;
+
             let html = `
-                <h2 style="margin-bottom: 20px; color: var(--navy-dark);">${item.name}'s Profile</h2>
-                <div style="margin-bottom: 12px; font-size: 15px;"><strong>Full Name:</strong> ${item.name}</div>
-                <div style="margin-bottom: 12px; font-size: 15px;"><strong>Mobile Number:</strong> ${item.phone}</div>
-                <div style="margin-bottom: 12px; font-size: 15px;"><strong>Email Address:</strong> ${item.email}</div>
-                <div style="margin-bottom: 12px; font-size: 15px;"><strong>Source:</strong> ${item.source}</div>
+                <div class="detail-card">
+                    <h3>Personal Information</h3>
+                    <div class="field-row"><span class="label">Full Name:</span><span class="value">${item.name}</span></div>
+                    <div class="field-row"><span class="label">Mobile Number:</span><span class="value">${item.phone}</span></div>
+                    <div class="field-row"><span class="label">Email Address:</span><span class="value">${item.email}</span></div>
+                    <div class="field-row"><span class="label">Location:</span><span class="value">${item.location}</span></div>
+                </div>
+                <div class="detail-card">
+                    <h3>Professional & Business</h3>
+                    <div class="field-row"><span class="label">Company Name:</span><span class="value">${item.company}</span></div>
+                    <div class="field-row"><span class="label">Designation:</span><span class="value">${item.designation}</span></div>
+                    <div class="field-row"><span class="label">Expected Budget:</span><span class="value">${item.budget}</span></div>
+                    <div class="field-row"><span class="label">Source:</span><span class="value">${item.source}</span></div>
+                </div>
             `;
 
             if (item.source === 'Reference') {
                 html += `
-                    <hr style="margin: 20px 0; border: 0; border-top: 1px solid #e2e8f0;">
-                    <h3 style="margin-bottom: 15px; color: var(--navy-dark);">Referrer Details</h3>
-                    <div style="margin-bottom: 12px; font-size: 15px;"><strong>Reference Name:</strong> ${item.refData.name}</div>
-                    <div style="margin-bottom: 12px; font-size: 15px;"><strong>Reference Mobile:</strong> ${item.refData.phone}</div>
-                    <div style="margin-bottom: 12px; font-size: 15px;"><strong>Reference Email:</strong> ${item.refData.email}</div>
+                    <div class="detail-card" style="grid-column: span 2;">
+                        <h3>Reference Information</h3>
+                        <div class="field-row"><span class="label">Reference Name:</span><span class="value">${item.refData.name}</span></div>
+                        <div class="field-row"><span class="label">Reference Mobile:</span><span class="value">${item.refData.phone}</span></div>
+                        <div class="field-row"><span class="label">Reference Email:</span><span class="value">${item.refData.email}</span></div>
+                    </div>
                 `;
             }
+
+            html += `
+                <div class="detail-card" style="grid-column: span 2;">
+                    <h3>Additional Notes</h3>
+                    <div style="font-size: 14px; color: var(--text-dark); margin-top: 5px; line-height: 1.5;">${item.notes}</div>
+                </div>
+            `;
 
             document.getElementById('detailPageContent').innerHTML = html;
             document.getElementById('mainTableView').style.display = 'none';
@@ -574,7 +658,6 @@
             document.getElementById('mainTableView').style.display = 'block';
         }
 
-        // Initial load
         renderTable();
     </script>
 </body>
